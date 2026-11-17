@@ -22,7 +22,7 @@
     <section class="hero"><div class="eyebrow">Công cụ minh hoạ học thuật</div><h1>Đánh giá nguy cơ,<br>rõ ràng và dễ hiểu.</h1><p>Nhập các chỉ số sức khỏe để mô hình đã huấn luyện ước tính xác suất mẫu có nhãn bệnh tim trong dữ liệu. Kết quả không phải chẩn đoán y khoa.</p></section>
     <div class="layout">
       <section class="card">
-        <h2>Thông tin sức khỏe</h2><p class="sub">Điền theo kết quả khám gần nhất. Trường “không rõ” có thể để 0.</p>
+        <h2>Thông tin sức khỏe</h2><p class="sub">Điền theo kết quả khám gần nhất. Huyết áp và cholesterol có thể nhập 0 nếu không rõ.</p>
         <form id="form">
           <div class="grid">
             <div class="field"><label for="age">Tuổi</label><input id="age" type="number" min="18" max="120" value="52" required></div>
@@ -32,7 +32,7 @@
             <div class="field"><label for="chol">Cholesterol <small>mg/dL · 0 nếu không rõ</small></label><input id="chol" type="number" min="0" max="1000" value="230" required></div>
             <div class="field"><label for="fbs">Đường huyết lúc đói &gt; 120 mg/dL</label><select id="fbs"><option value="0">Không</option><option value="1">Có</option></select></div>
             <div class="field"><label for="ecg">Điện tâm đồ lúc nghỉ</label><select id="ecg"><option value="Normal">Bình thường</option><option value="ST">Bất thường ST</option><option value="LVH">Phì đại thất trái (LVH)</option></select></div>
-            <div class="field"><label for="maxhr">Nhịp tim tối đa <small>bpm · 0 nếu không rõ</small></label><input id="maxhr" type="number" min="0" max="250" value="135" required></div>
+            <div class="field"><label for="maxhr">Nhịp tim tối đa <small>bpm · bắt buộc lớn hơn 0</small></label><input id="maxhr" type="number" min="1" max="250" value="135" required></div>
             <div class="field"><label for="angina">Đau thắt ngực khi gắng sức</label><select id="angina"><option value="N">Không</option><option value="Y">Có</option></select></div>
             <div class="field"><label for="oldpeak">Oldpeak <small>ST depression</small></label><input id="oldpeak" type="number" min="-10" max="20" step="0.1" value="1.0" required></div>
             <div class="field"><label for="slope">Độ dốc đoạn ST khi gắng sức</label><select id="slope"><option value="Up">Tăng (Up)</option><option value="Flat" selected>Ngang (Flat)</option><option value="Down">Giảm (Down)</option></select></div>
@@ -41,18 +41,53 @@
           <p class="hint">Các giá trị phân loại và đơn vị được giữ theo đúng dữ liệu dùng khi huấn luyện mô hình.</p>
         </form>
         <div id="error" class="error"></div>
-        <div id="result" class="result" aria-live="polite"><h3 id="resultTitle"></h3><div id="prob" class="prob"></div><p id="resultText"></p><p id="disclaimer"></p></div>
+        <div id="result" class="result" aria-live="polite"><h3 id="resultTitle"></h3><div id="prob" class="prob"></div><p id="resultText"></p><p id="thresholdText"></p><p id="disclaimer"></p><button class="submit" id="download" type="button" hidden>Tải kết quả (.txt)</button></div>
       </section>
-      <aside class="card side"><div class="model-badge"><span class="dot"></span> Logistic Regression · đã huấn luyện</div><h2>Mô hình được chọn từ ba thuật toán</h2><p>Notebook chọn Logistic Regression theo quy tắc ROC-AUC, recall tối thiểu và khả năng giải thích; mô hình được nạp trực tiếp từ artifact đã lưu.</p><div class="metric"><span>ROC-AUC · tập test</span><strong>0,9374</strong></div><div class="metric"><span>Accuracy · tập test</span><strong>89,86%</strong></div><div class="metric"><span>Recall · tập test</span><strong>92,11%</strong></div><div class="note"><strong>Lưu ý:</strong> mô hình học từ 918 mẫu của bộ dữ liệu Heart Failure Prediction. Hiệu năng trên tập dữ liệu khác có thể thấp hơn. Không dùng kết quả này để tự chẩn đoán, điều trị hoặc trì hoãn việc khám bệnh.</div></aside>
+      <aside class="card side"><div class="model-badge"><span class="dot"></span> Logistic Regression · đã huấn luyện</div><h2>Mô hình được chọn từ ba thuật toán</h2><p>Notebook chọn Logistic Regression theo quy tắc ROC-AUC, recall tối thiểu và khả năng giải thích; mô hình được nạp trực tiếp từ artifact đã lưu.</p><div class="metric"><span>Ngưỡng phân loại</span><strong>0,50</strong></div><div class="metric"><span>ROC-AUC · tập test</span><strong>0,9374</strong></div><div class="metric"><span>Accuracy · tập test</span><strong>89,86%</strong></div><div class="metric"><span>Recall · tập test</span><strong>92,11%</strong></div><div class="note"><strong>Lưu ý:</strong> ngưỡng 0,50 là mặc định, chưa được điều chỉnh để ưu tiên recall. Mô hình học từ 918 mẫu; hiệu năng trên dữ liệu khác có thể thấp hơn. Không dùng kết quả này để tự chẩn đoán hoặc trì hoãn việc khám.</div></aside>
     </div><div class="footer">HeartCheck · Giao diện minh hoạ cho đồ án, không phải thiết bị y tế.</div>
   </main>
   <script>
-    const form=document.querySelector('#form'), button=document.querySelector('#submit'), result=document.querySelector('#result'), error=document.querySelector('#error');
+    const form=document.querySelector('#form'), button=document.querySelector('#submit'), result=document.querySelector('#result'), error=document.querySelector('#error'), downloadButton=document.querySelector('#download');
     const v=id=>document.getElementById(id).value;
+    let lastReport=null;
+    const labels={sex:{M:'Nam',F:'Nữ'},chest_pain_type:{TA:'Đau thắt ngực điển hình',ATA:'Đau thắt ngực không điển hình',NAP:'Đau không do thắt ngực',ASY:'Không triệu chứng'},fasting_bs:{0:'Không',1:'Có'},resting_ecg:{Normal:'Bình thường',ST:'Bất thường ST',LVH:'Phì đại thất trái'},exercise_angina:{N:'Không',Y:'Có'},st_slope:{Up:'Tăng',Flat:'Ngang',Down:'Giảm'}};
+    const displayValue=(key,value)=>labels[key]?.[value]??value;
+    downloadButton.addEventListener('click',()=>{
+      if(!lastReport)return;
+      const {body,data}=lastReport;
+      const rows=[
+        'HEARTCHECK — KẾT QUẢ MINH HỌA',
+        `Thời gian tạo: ${new Date().toLocaleString('vi-VN')}`,
+        '',
+        'THÔNG TIN ĐẦU VÀO',
+        `Tuổi: ${body.age}`,
+        `Giới tính: ${displayValue('sex',body.sex)}`,
+        `Loại đau ngực: ${displayValue('chest_pain_type',body.chest_pain_type)}`,
+        `Huyết áp nghỉ (mmHg): ${body.resting_bp}`,
+        `Cholesterol (mg/dL): ${body.cholesterol}`,
+        `Đường huyết lúc đói > 120 mg/dL: ${displayValue('fasting_bs',body.fasting_bs)}`,
+        `Điện tâm đồ lúc nghỉ: ${displayValue('resting_ecg',body.resting_ecg)}`,
+        `Nhịp tim tối đa (bpm): ${body.max_hr}`,
+        `Đau thắt ngực khi gắng sức: ${displayValue('exercise_angina',body.exercise_angina)}`,
+        `Oldpeak: ${body.oldpeak}`,
+        `Độ dốc ST: ${displayValue('st_slope',body.st_slope)}`,
+        '',
+        'KẾT QUẢ MÔ HÌNH',
+        `Mô hình: ${data.model}`,
+        `Xác suất dự đoán cho nhãn bệnh tim: ${(data.risk_probability*100).toFixed(1)}%`,
+        `Kết quả theo ngưỡng ${data.decision_threshold.toFixed(2)}: ${data.result}`,
+        data.threshold_description,
+        '',
+        `Lưu ý: ${data.disclaimer}`,
+        'File được tạo theo yêu cầu người dùng trên thiết bị hiện tại.'
+      ];
+      const blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/plain;charset=utf-8'}), url=URL.createObjectURL(blob), a=document.createElement('a');
+      a.href=url;a.download=`heartcheck-result-${new Date().toISOString().slice(0,10)}.txt`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+    });
     form.addEventListener('submit',async e=>{e.preventDefault();error.textContent='';result.className='result';button.disabled=true;button.textContent='Đang phân tích…';
       const body={age:+v('age'),sex:v('sex'),chest_pain_type:v('chest'),resting_bp:+v('bp'),cholesterol:+v('chol'),fasting_bs:+v('fbs'),resting_ecg:v('ecg'),max_hr:+v('maxhr'),exercise_angina:v('angina'),oldpeak:+v('oldpeak'),st_slope:v('slope')};
       try{const r=await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw new Error(data.detail||'Có lỗi khi gửi dữ liệu.');
-        document.querySelector('#resultTitle').textContent=data.result;document.querySelector('#prob').textContent=(data.risk_probability*100).toFixed(1)+'%';document.querySelector('#resultText').textContent='Xác suất dự đoán cho nhãn bệnh tim của mô hình (không phải xác suất chẩn đoán cá nhân đã được hiệu chuẩn).';document.querySelector('#disclaimer').textContent=data.disclaimer;result.className='result show'+(data.prediction?' high':'');result.scrollIntoView({behavior:'smooth',block:'nearest'});
+        lastReport={body,data};document.querySelector('#resultTitle').textContent=data.result;document.querySelector('#prob').textContent=(data.risk_probability*100).toFixed(1)+'%';document.querySelector('#resultText').textContent='Xác suất dự đoán cho nhãn bệnh tim của mô hình (không phải xác suất chẩn đoán cá nhân đã được hiệu chuẩn).';document.querySelector('#thresholdText').textContent=data.threshold_description;document.querySelector('#disclaimer').textContent=data.disclaimer;downloadButton.hidden=false;result.className='result show'+(data.prediction?' high':'');result.scrollIntoView({behavior:'smooth',block:'nearest'});
       }catch(err){error.textContent=err.message;}finally{button.disabled=false;button.textContent='Phân tích bằng mô hình';}
     });
   </script>

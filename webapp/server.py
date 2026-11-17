@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_PATH = ROOT / "best_model_heart_disease.joblib"
 PAGE_PATH = Path(__file__).resolve().parent / "index.html"
+DECISION_THRESHOLD = 0.5
 
 app = FastAPI(title="HeartCheck | Đánh giá nguy cơ bệnh tim", version="1.0.0")
 model = joblib.load(MODEL_PATH)
@@ -24,7 +25,7 @@ class PatientInput(BaseModel):
     cholesterol: int = Field(ge=0, le=1000, description="Cholesterol (mg/dL); 0 nếu không rõ")
     fasting_bs: Literal[0, 1]
     resting_ecg: Literal["Normal", "ST", "LVH"]
-    max_hr: int = Field(ge=0, le=250, description="Nhịp tim tối đa; 0 nếu không rõ")
+    max_hr: int = Field(gt=0, le=250, description="Nhịp tim tối đa (bpm), phải lớn hơn 0")
     exercise_angina: Literal["Y", "N"]
     oldpeak: float = Field(ge=-10, le=20, description="ST depression")
     st_slope: Literal["Up", "Flat", "Down"]
@@ -61,12 +62,14 @@ def predict(patient: PatientInput):
     row["RestingBP"] = row["RestingBP"].replace(0, float("nan"))
     try:
         probability = float(model.predict_proba(row)[0, 1])
-        label = int(model.predict(row)[0])
+        label = int(probability >= DECISION_THRESHOLD)
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Không thể chạy mô hình. Hãy kiểm tra phiên bản thư viện theo requirements.txt.") from exc
     return {
         "risk_probability": round(probability, 4),
         "prediction": label,
+        "decision_threshold": DECISION_THRESHOLD,
+        "threshold_description": "Gán nhãn 1 khi xác suất dự đoán >= 0.50; đây là ngưỡng mặc định, chưa được tối ưu theo recall.",
         "result": "Mô hình ghi nhận tín hiệu nguy cơ" if label else "Mô hình không ghi nhận tín hiệu nguy cơ",
         "model": "Logistic Regression",
         "metrics": {"test_roc_auc": 0.9374, "test_accuracy": 0.8986, "test_recall": 0.9211},
