@@ -2,6 +2,8 @@
 
 Web demo tiếng Việt cho đồ án dự đoán bệnh tim. API nạp `best_model_heart_disease.joblib` (Logistic Regression được notebook chọn) và áp dụng tiền xử lý cùng quy tắc với notebook trước khi dự đoán.
 
+Notebook huấn luyện và so sánh ba thuật toán: [Compare_3_Algorithms_HeartDisease.ipynb](Compare_3_Algorithms_HeartDisease.ipynb). Nguồn và cách lấy dữ liệu được ghi trong [DATASET.md](DATASET.md). Chỉ cần notebook + dữ liệu nếu muốn tái huấn luyện; để chạy web, dùng model đã lưu.
+
 ## Chạy trên Windows PowerShell
 
 ```powershell
@@ -21,6 +23,10 @@ python3 -m venv .venv
 ```
 
 Giữ `best_model_heart_disease.joblib` ở thư mục gốc dự án. Môi trường này ghim scikit-learn 1.6.1 để tương thích với artifact xuất từ Colab. Không cần cài torch, torchvision hoặc facenet-pytorch cho web này.
+
+Web phân loại nhãn 1 khi `predict_proba` trả về xác suất từ 0,50 trở lên. Đây là ngưỡng mặc định của Logistic Regression, chưa được điều chỉnh theo recall. Nếu nghiên cứu ngưỡng khác, hãy chọn ngưỡng trên validation rồi chỉ đánh giá một lần trên test.
+
+Sau khi có kết quả, người dùng có thể chủ động bấm **Tải kết quả (.txt)**. File được tạo ngay trên trình duyệt, chỉ theo yêu cầu; web không lưu lịch sử dự đoán.
 
 ## Gợi ý trình bày đồ án
 
